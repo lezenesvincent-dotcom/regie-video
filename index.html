@@ -149,14 +149,23 @@
     position: relative; display: flex; align-items: center; justify-content: center;
   }
   .preview-screen span { font-size: 1.8vw; font-weight: 600; color: #aaa; letter-spacing: 2px; }
-  .zoom-ctrls { position: absolute; top: 6px; right: 6px; display: flex; flex-direction: column; gap: 3px; }
+  .preview-screen img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    border-radius: 8px;
+    display: none;
+  }
+  .zoom-ctrls { position: absolute; top: 6px; right: 6px; display: flex; flex-direction: column; gap: 3px; z-index: 2; }
   .zoom-btn {
     width: 34px; height: 34px; background: #5a5e64; border: none; border-radius: 50%;
     color: #ddd; font-size: 20px; font-weight: 700; cursor: pointer;
     display: flex; align-items: center; justify-content: center;
   }
   .zoom-btn:hover { background: #6a6e74; }
-  .home-icon { position: absolute; bottom: 6px; left: 8px; cursor: pointer; }
+  .home-icon { position: absolute; bottom: 6px; left: 8px; cursor: pointer; z-index: 2; }
 
   .framing-bar { display: flex; gap: 4px; background: #3a3e44; border-radius: 8px; padding: 4px; }
   .frame-slot {
@@ -275,28 +284,14 @@
   .m-btn.morning { background: #aaa; color: #222; }
   .m-btn.autres { background: #aaa; color: #222; }
 
-  /* PGM live indicator */
   .pgm-live-badge {
-    position: absolute;
-    top: 10px;
-    left: 12px;
-    background: #e00;
-    color: #fff;
-    font-size: 11px;
-    font-weight: 800;
-    padding: 3px 10px;
-    border-radius: 4px;
-    display: none;
-    letter-spacing: 1px;
+    position: absolute; top: 10px; left: 12px;
+    background: #e00; color: #fff; font-size: 11px; font-weight: 800;
+    padding: 3px 10px; border-radius: 4px; display: none; letter-spacing: 1px; z-index: 2;
   }
   .pgm-cam-label {
-    position: absolute;
-    top: 10px;
-    right: 12px;
-    color: #00c8ff;
-    font-size: 13px;
-    font-weight: 700;
-    display: none;
+    position: absolute; top: 10px; right: 12px;
+    color: #00c8ff; font-size: 13px; font-weight: 700; display: none; z-index: 2;
   }
 </style>
 </head>
@@ -389,7 +384,8 @@
   <div class="right">
     <div class="preview-panel">
       <div class="preview-screen">
-        <span>CAM 1</span>
+        <span id="previewLabel">CAM 1</span>
+        <img id="previewStream" alt="">
         <div class="zoom-ctrls">
           <button class="zoom-btn">+</button>
           <button class="zoom-btn">−</button>
@@ -414,15 +410,15 @@
 
     <div class="cam-section">
       <div class="cam-grid">
-        <div class="cam-g">CAM 3</div>
-        <div class="cam-g">CAM 6</div>
+        <div class="cam-g" data-cam="3">CAM 3</div>
+        <div class="cam-g" data-cam="6">CAM 6</div>
         <div class="cam-g empty">—</div>
-        <div class="cam-g">CAM 2</div>
-        <div class="cam-g">CAM 5</div>
-        <div class="cam-g">CAM 8</div>
-        <div class="cam-g active">CAM 1</div>
-        <div class="cam-g">CAM 4</div>
-        <div class="cam-g">CAM 7</div>
+        <div class="cam-g" data-cam="2">CAM 2</div>
+        <div class="cam-g" data-cam="5">CAM 5</div>
+        <div class="cam-g" data-cam="8">CAM 8</div>
+        <div class="cam-g active" data-cam="1">CAM 1</div>
+        <div class="cam-g" data-cam="4">CAM 4</div>
+        <div class="cam-g" data-cam="7">CAM 7</div>
       </div>
       <div class="dpad">
         <div class="dpad-row">
@@ -477,26 +473,18 @@
 
 <script>
   // ===== CONFIGURATION CAMERAS =====
-  // Associe chaque CAM à une source vidéo
-  // Pour l'instant seule CAM 1 a un flux (FR7 via proxy)
   const camSources = {
     1: 'http://192.168.1.54/image3',  // Sony FR7 MJPEG direct
-    2: null,
-    3: null,
-    4: null,
-    5: null,
-    6: null,
-    7: null,
-    8: null
+    2: null, 3: null, 4: null, 5: null, 6: null, 7: null, 8: null
   };
 
   let activePgmCam = null;
+  let activePreviewCam = null;
 
   // ===== CAM PILLS → PGM =====
   document.querySelectorAll('.cam-pill').forEach(pill => {
     pill.addEventListener('click', () => {
-      const camNum = parseInt(pill.dataset.cam);
-      selectPgmCam(camNum);
+      selectPgmCam(parseInt(pill.dataset.cam));
     });
   });
 
@@ -506,16 +494,12 @@
     const pgmLive = document.getElementById('pgmLive');
     const pgmCamLabel = document.getElementById('pgmCamLabel');
 
-    // Update active pill
     document.querySelectorAll('.cam-pill').forEach(p => p.classList.remove('active'));
     document.querySelector(`.cam-pill[data-cam="${camNum}"]`).classList.add('active');
-
     activePgmCam = camNum;
 
     const src = camSources[camNum];
-
     if (src) {
-      // Camera has a stream → show it
       pgmLabel.style.display = 'none';
       pgmStream.src = src;
       pgmStream.style.display = 'block';
@@ -523,27 +507,63 @@
       pgmCamLabel.textContent = 'CAM ' + camNum;
       pgmCamLabel.style.display = 'block';
     } else {
-      // No stream → show placeholder
       pgmStream.style.display = 'none';
       pgmStream.src = '';
       pgmLive.style.display = 'none';
       pgmCamLabel.style.display = 'none';
       pgmLabel.style.display = 'block';
       pgmLabel.textContent = 'CAM ' + camNum;
+      pgmLabel.style.color = '#aaa';
     }
   }
 
-  // Handle stream error
-  document.getElementById('pgmStream').addEventListener('error', () => {
-    const pgmLabel = document.getElementById('pgmLabel');
-    const pgmStream = document.getElementById('pgmStream');
-    const pgmLive = document.getElementById('pgmLive');
+  // ===== CAM GRID → PREVIEW =====
+  document.querySelectorAll('.cam-g').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const camNum = btn.dataset.cam;
+      if (!camNum) return;
+      selectPreviewCam(parseInt(camNum));
+    });
+  });
 
-    pgmStream.style.display = 'none';
-    pgmLive.style.display = 'none';
-    pgmLabel.style.display = 'block';
-    pgmLabel.textContent = 'CAM ' + activePgmCam + ' — pas de signal';
-    pgmLabel.style.color = '#c44';
+  function selectPreviewCam(camNum) {
+    const previewLabel = document.getElementById('previewLabel');
+    const previewStream = document.getElementById('previewStream');
+
+    document.querySelectorAll('.cam-g').forEach(g => g.classList.remove('active'));
+    document.querySelector(`.cam-g[data-cam="${camNum}"]`).classList.add('active');
+    activePreviewCam = camNum;
+
+    const src = camSources[camNum];
+    if (src) {
+      previewLabel.style.display = 'none';
+      previewStream.src = src;
+      previewStream.style.display = 'block';
+    } else {
+      previewStream.style.display = 'none';
+      previewStream.src = '';
+      previewLabel.style.display = 'block';
+      previewLabel.textContent = 'CAM ' + camNum;
+      previewLabel.style.color = '#aaa';
+    }
+  }
+
+  // Handle stream errors
+  document.getElementById('pgmStream').addEventListener('error', () => {
+    document.getElementById('pgmStream').style.display = 'none';
+    document.getElementById('pgmLive').style.display = 'none';
+    const l = document.getElementById('pgmLabel');
+    l.style.display = 'block';
+    l.textContent = 'CAM ' + activePgmCam + ' — pas de signal';
+    l.style.color = '#c44';
+  });
+
+  document.getElementById('previewStream').addEventListener('error', () => {
+    document.getElementById('previewStream').style.display = 'none';
+    const l = document.getElementById('previewLabel');
+    l.style.display = 'block';
+    l.textContent = 'CAM ' + activePreviewCam + ' — pas de signal';
+    l.style.color = '#c44';
   });
 </script>
 </body>
