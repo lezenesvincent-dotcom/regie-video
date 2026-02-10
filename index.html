@@ -24,6 +24,7 @@
     height: 100%;
     gap: 8px;
     padding: 8px;
+    overflow: hidden;
   }
 
   .left {
@@ -126,6 +127,7 @@
     flex-direction: column;
     gap: 8px;
     min-height: 0;
+    overflow: hidden;
   }
 
   .preview-panel {
@@ -167,23 +169,24 @@
   .cam-g.active { background: #00c8ff; border-color: #00c8ff; color: #000; }
   .cam-g.empty { color: #445; }
 
-  .dpad { width: 70px; display: flex; flex-direction: column; align-items: center; justify-content: center; flex-shrink: 0; }
+  .dpad { width: 66px; display: flex; flex-direction: column; align-items: center; justify-content: center; flex-shrink: 0; }
   .dpad-row { display: flex; align-items: center; justify-content: center; }
-  .dpad-arrow { background: none; border: none; cursor: pointer; padding: 1px; display: flex; align-items: center; justify-content: center; }
-  .dpad-arrow svg { fill: #bbb; }
-  .dpad-arrow:hover svg { fill: #fff; }
+  .dpad-arrow { background: none; border: none; cursor: pointer; padding: 0; display: flex; align-items: center; justify-content: center; }
+  .dpad-arrow:hover svg { stroke: #fff; }
   .dpad-center-btn {
-    width: 36px; height: 36px; background: #00c8ff; border-radius: 50%; border: none;
+    width: 34px; height: 34px; background: #00c8ff; border-radius: 50%; border: none;
     font-size: 9px; font-weight: 800; color: #000; cursor: pointer; margin: 0 1px;
   }
   .dpad-x2 { font-size: 11px; font-weight: 700; color: #888; margin-top: 1px; }
 
+  /* ===== MEDIA ZONE ===== */
   .media-zone {
     display: flex;
-    gap: 8px;
+    gap: 6px;
     flex: 1 1 0;
     min-height: 0;
   }
+  /* Left part: thumbs on top, bottom controls below */
   .media-left {
     flex: 1;
     display: flex;
@@ -236,17 +239,17 @@
 
   .bottom-ctrls {
     display: flex;
-    gap: 8px;
+    gap: 10px;
     flex-shrink: 0;
-    height: 40px;
+    height: 46px;
   }
   .bc {
-    height: 100%; background: #c8c8c8; border: none; border-radius: 10px;
+    height: 100%; background: #555a62; border: 1.5px solid #666b73; border-radius: 12px;
     cursor: pointer; display: flex; align-items: center; justify-content: center;
   }
-  .bc:hover { background: #b0b0b0; }
-  .bc-demo { width: 60px; font-size: 12px; font-weight: 600; color: #333; }
-  .bc-icon { width: 46px; }
+  .bc:hover { background: #656a72; }
+  .bc-demo { width: 68px; font-size: 13px; font-weight: 600; color: #ccc; }
+  .bc-icon { width: 56px; }
 
   .media-right-btns {
     width: 100px;
@@ -386,15 +389,15 @@
       </div>
       <div class="dpad">
         <div class="dpad-row">
-          <button class="dpad-arrow"><svg width="24" height="18" viewBox="0 0 24 18"><path d="M12 2L22 16H2L12 2Z"/></svg></button>
+          <button class="dpad-arrow"><svg width="22" height="16" viewBox="0 0 22 16" fill="none"><path d="M11 2L19 14H3L11 2Z" stroke="#bbb" stroke-width="2.5" stroke-linejoin="round"/></svg></button>
         </div>
         <div class="dpad-row">
-          <button class="dpad-arrow"><svg width="18" height="24" viewBox="0 0 18 24"><path d="M2 12L16 2V22L2 12Z"/></svg></button>
+          <button class="dpad-arrow"><svg width="16" height="22" viewBox="0 0 16 22" fill="none"><path d="M2 11L14 3V19L2 11Z" stroke="#bbb" stroke-width="2.5" stroke-linejoin="round"/></svg></button>
           <button class="dpad-center-btn">slow</button>
-          <button class="dpad-arrow"><svg width="18" height="24" viewBox="0 0 18 24"><path d="M16 12L2 2V22L16 12Z"/></svg></button>
+          <button class="dpad-arrow"><svg width="16" height="22" viewBox="0 0 16 22" fill="none"><path d="M14 11L2 3V19L14 11Z" stroke="#bbb" stroke-width="2.5" stroke-linejoin="round"/></svg></button>
         </div>
         <div class="dpad-row" style="flex-direction:column;align-items:center;">
-          <button class="dpad-arrow"><svg width="24" height="18" viewBox="0 0 24 18"><path d="M12 16L2 2H22L12 16Z"/></svg></button>
+          <button class="dpad-arrow"><svg width="22" height="16" viewBox="0 0 22 16" fill="none"><path d="M11 14L3 2H19L11 14Z" stroke="#bbb" stroke-width="2.5" stroke-linejoin="round"/></svg></button>
           <span class="dpad-x2">x2</span>
         </div>
       </div>
@@ -414,9 +417,15 @@
         </div>
         <div class="bottom-ctrls">
           <button class="bc bc-demo">Démo</button>
-          <button class="bc bc-icon"><svg width="18" height="20" viewBox="0 0 20 22"><polygon points="2,0 20,11 2,22" fill="#444"/></svg></button>
-          <button class="bc bc-icon"><svg width="20" height="18" viewBox="0 0 24 22"><path d="M2 2h20v13H7L2 20V2z" fill="none" stroke="#444" stroke-width="2.5" stroke-linejoin="round"/></svg></button>
-          <button class="bc bc-icon"><svg width="20" height="20" viewBox="0 0 24 24"><path d="M12 4v12M12 16l-5-5M12 16l5-5" stroke="#444" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M5 20h14" stroke="#444" stroke-width="2.5" stroke-linecap="round"/></svg></button>
+          <button class="bc bc-icon">
+            <svg width="22" height="24" viewBox="0 0 22 24" fill="none"><path d="M4 2L19 12L4 22V2Z" stroke="#ccc" stroke-width="2.5" stroke-linejoin="round"/></svg>
+          </button>
+          <button class="bc bc-icon">
+            <svg width="24" height="22" viewBox="0 0 24 22" fill="none"><path d="M2 1h20v13H8L2 20V1Z" stroke="#ccc" stroke-width="2.5" stroke-linejoin="round"/></svg>
+          </button>
+          <button class="bc bc-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M12 3v13M12 16l-5-5M12 16l5-5" stroke="#ccc" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><rect x="3" y="18" width="18" height="3" rx="1.5" stroke="#ccc" stroke-width="2.5"/></svg>
+          </button>
         </div>
       </div>
       <div class="media-right-btns">
