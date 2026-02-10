@@ -52,8 +52,18 @@
     align-items: center;
     justify-content: center;
     min-height: 0;
+    position: relative;
   }
   .pgm-screen span { font-size: 2.2vw; font-weight: 500; color: #aaa; letter-spacing: 3px; }
+  .pgm-screen img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    border-radius: 12px 12px 0 0;
+    display: none;
+  }
   .cam-pills { display: flex; gap: 4px; padding: 8px 8px 10px; flex-shrink: 0; }
   .cam-pill {
     flex: 1; height: 30px;
@@ -179,14 +189,12 @@
   }
   .dpad-x2 { font-size: 11px; font-weight: 700; color: #888; margin-top: 1px; }
 
-  /* ===== MEDIA ZONE ===== */
   .media-zone {
     display: flex;
     gap: 6px;
     flex: 1 1 0;
     min-height: 0;
   }
-  /* Left part: thumbs on top, bottom controls below */
   .media-left {
     flex: 1;
     display: flex;
@@ -266,6 +274,30 @@
   .m-btn.direct { background: #00c8ff; color: #000; }
   .m-btn.morning { background: #aaa; color: #222; }
   .m-btn.autres { background: #aaa; color: #222; }
+
+  /* PGM live indicator */
+  .pgm-live-badge {
+    position: absolute;
+    top: 10px;
+    left: 12px;
+    background: #e00;
+    color: #fff;
+    font-size: 11px;
+    font-weight: 800;
+    padding: 3px 10px;
+    border-radius: 4px;
+    display: none;
+    letter-spacing: 1px;
+  }
+  .pgm-cam-label {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    color: #00c8ff;
+    font-size: 13px;
+    font-weight: 700;
+    display: none;
+  }
 </style>
 </head>
 <body>
@@ -273,16 +305,21 @@
 
   <div class="left">
     <div class="pgm-block">
-      <div class="pgm-screen"><span>PGM</span></div>
-      <div class="cam-pills">
-        <div class="cam-pill">CAM 1</div>
-        <div class="cam-pill active">CAM 2</div>
-        <div class="cam-pill">CAM 3</div>
-        <div class="cam-pill">CAM 4</div>
-        <div class="cam-pill">CAM 5</div>
-        <div class="cam-pill">CAM 6</div>
-        <div class="cam-pill">CAM 7</div>
-        <div class="cam-pill">CAM 8</div>
+      <div class="pgm-screen" id="pgmScreen">
+        <span id="pgmLabel">PGM</span>
+        <img id="pgmStream" alt="">
+        <div class="pgm-live-badge" id="pgmLive">● LIVE</div>
+        <div class="pgm-cam-label" id="pgmCamLabel"></div>
+      </div>
+      <div class="cam-pills" id="camPills">
+        <div class="cam-pill" data-cam="1">CAM 1</div>
+        <div class="cam-pill" data-cam="2">CAM 2</div>
+        <div class="cam-pill" data-cam="3">CAM 3</div>
+        <div class="cam-pill" data-cam="4">CAM 4</div>
+        <div class="cam-pill" data-cam="5">CAM 5</div>
+        <div class="cam-pill" data-cam="6">CAM 6</div>
+        <div class="cam-pill" data-cam="7">CAM 7</div>
+        <div class="cam-pill" data-cam="8">CAM 8</div>
       </div>
     </div>
 
@@ -437,5 +474,77 @@
   </div>
 
 </div>
+
+<script>
+  // ===== CONFIGURATION CAMERAS =====
+  // Associe chaque CAM à une source vidéo
+  // Pour l'instant seule CAM 1 a un flux (FR7 via proxy)
+  const camSources = {
+    1: 'http://localhost:3000/camera/video',  // Sony FR7 MJPEG via proxy
+    2: null,
+    3: null,
+    4: null,
+    5: null,
+    6: null,
+    7: null,
+    8: null
+  };
+
+  let activePgmCam = null;
+
+  // ===== CAM PILLS → PGM =====
+  document.querySelectorAll('.cam-pill').forEach(pill => {
+    pill.addEventListener('click', () => {
+      const camNum = parseInt(pill.dataset.cam);
+      selectPgmCam(camNum);
+    });
+  });
+
+  function selectPgmCam(camNum) {
+    const pgmLabel = document.getElementById('pgmLabel');
+    const pgmStream = document.getElementById('pgmStream');
+    const pgmLive = document.getElementById('pgmLive');
+    const pgmCamLabel = document.getElementById('pgmCamLabel');
+
+    // Update active pill
+    document.querySelectorAll('.cam-pill').forEach(p => p.classList.remove('active'));
+    document.querySelector(`.cam-pill[data-cam="${camNum}"]`).classList.add('active');
+
+    activePgmCam = camNum;
+
+    const src = camSources[camNum];
+
+    if (src) {
+      // Camera has a stream → show it
+      pgmLabel.style.display = 'none';
+      pgmStream.src = src;
+      pgmStream.style.display = 'block';
+      pgmLive.style.display = 'block';
+      pgmCamLabel.textContent = 'CAM ' + camNum;
+      pgmCamLabel.style.display = 'block';
+    } else {
+      // No stream → show placeholder
+      pgmStream.style.display = 'none';
+      pgmStream.src = '';
+      pgmLive.style.display = 'none';
+      pgmCamLabel.style.display = 'none';
+      pgmLabel.style.display = 'block';
+      pgmLabel.textContent = 'CAM ' + camNum;
+    }
+  }
+
+  // Handle stream error
+  document.getElementById('pgmStream').addEventListener('error', () => {
+    const pgmLabel = document.getElementById('pgmLabel');
+    const pgmStream = document.getElementById('pgmStream');
+    const pgmLive = document.getElementById('pgmLive');
+
+    pgmStream.style.display = 'none';
+    pgmLive.style.display = 'none';
+    pgmLabel.style.display = 'block';
+    pgmLabel.textContent = 'CAM ' + activePgmCam + ' — pas de signal';
+    pgmLabel.style.color = '#c44';
+  });
+</script>
 </body>
 </html>
