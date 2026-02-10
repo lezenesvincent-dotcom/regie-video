@@ -103,7 +103,6 @@
   .page-img .pi-col { flex: 1; background: rgba(20,55,95,0.3); border-radius: 2px; padding: 2px; display: flex; flex-direction: column; gap: 2px; }
   .page-img .pi-line { height: 3px; background: rgba(50,110,170,0.2); border-radius: 1px; }
   .page-thumb .p-label { font-size: 12px; color: #777; }
-  .page-thumb-cyan { flex: 0.3; }
 
   .right-tags { display: flex; flex-direction: column; gap: 6px; width: 260px; flex-shrink: 0; }
   .tag-row { display: flex; gap: 5px; align-items: center; flex-wrap: wrap; }
@@ -159,7 +158,6 @@
   .frame-slot svg .pf { fill: #999; }
   .frame-slot.active svg .pf { fill: #000; }
 
-  /* Cam section */
   .cam-section { display: flex; gap: 8px; flex-shrink: 0; }
   .cam-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; flex: 1; }
   .cam-g {
@@ -177,51 +175,45 @@
   .dpad-arrow svg { fill: #bbb; }
   .dpad-arrow:hover svg { fill: #fff; }
   .dpad-center-btn {
-    width: 38px; height: 38px; background: #00c8ff; border-radius: 50%; border: none;
-    font-size: 10px; font-weight: 800; color: #000; cursor: pointer; margin: 0 2px;
+    width: 36px; height: 36px; background: #00c8ff; border-radius: 50%; border: none;
+    font-size: 9px; font-weight: 800; color: #000; cursor: pointer; margin: 0 2px;
   }
   .dpad-x2 { font-size: 11px; font-weight: 700; color: #888; margin-top: 2px; }
 
-  /* ===== BOTTOM RIGHT: media zone ===== */
-  /* This is the key layout: thumbs+labels left, DIRECT/MORNING/AUTRES right, Démo row below thumbs */
+  /* ===== MEDIA ZONE ===== */
   .media-zone {
-    flex: 1 1 0;
-    min-height: 0;
     display: flex;
     gap: 8px;
+    flex-shrink: 0;
+    height: 160px;
   }
   .media-left {
     flex: 1;
     display: flex;
     flex-direction: column;
     gap: 6px;
-    min-height: 0;
   }
   .media-thumbs-row {
     display: flex;
     gap: 10px;
-    flex: 1 1 0;
+    flex: 1;
     min-height: 0;
-    align-items: flex-start;
   }
   .m-wrap {
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 4px;
-    height: 100%;
+    width: 120px;
+    flex-shrink: 0;
   }
   .m-thumb {
-    flex: 1 1 0;
-    min-height: 0;
-    aspect-ratio: 1;
-    max-height: 100%;
-    width: auto;
+    width: 120px;
+    height: 110px;
     border-radius: 12px;
     overflow: hidden;
     cursor: pointer;
     border: 3px solid transparent;
-    position: relative;
   }
   .m-thumb.sel { border-color: #00c8ff; box-shadow: 0 0 12px rgba(0,200,255,0.3); }
   .m-inner { width: 100%; height: 100%; position: relative; display: flex; align-items: center; justify-content: center; }
@@ -237,31 +229,29 @@
                 linear-gradient(180deg, #181838, #1a0030);
   }
   .m-logo {
-    position: relative; z-index: 1; width: 44px; height: 44px;
+    position: relative; z-index: 1; width: 40px; height: 40px;
     background: linear-gradient(135deg, #2244cc, #1a33aa); border-radius: 10px;
     display: flex; align-items: center; justify-content: center;
-    color: #fff; font-size: 7px; font-weight: 800;
+    color: #fff; font-size: 6px; font-weight: 800;
   }
-  .m-label { font-size: 10px; color: #888; font-weight: 500; text-align: center; flex-shrink: 0; }
+  .m-label { font-size: 10px; color: #888; font-weight: 500; text-align: center; }
 
-  /* Bottom controls under thumbs */
   .bottom-ctrls {
     display: flex;
     gap: 8px;
     flex-shrink: 0;
-    height: 42px;
+    height: 40px;
   }
   .bc {
     height: 100%; background: #c8c8c8; border: none; border-radius: 10px;
     cursor: pointer; display: flex; align-items: center; justify-content: center;
   }
   .bc:hover { background: #b0b0b0; }
-  .bc-demo { width: 64px; font-size: 13px; font-weight: 600; color: #333; }
-  .bc-icon { width: 48px; }
+  .bc-demo { width: 60px; font-size: 12px; font-weight: 600; color: #333; }
+  .bc-icon { width: 46px; }
 
-  /* Right buttons column: DIRECT / MORNING / AUTRES */
   .media-right-btns {
-    width: 120px;
+    width: 110px;
     display: flex;
     flex-direction: column;
     gap: 6px;
@@ -269,7 +259,7 @@
   }
   .m-btn {
     flex: 1; border-radius: 10px; border: none;
-    font-size: 13px; font-weight: 700; cursor: pointer; letter-spacing: 0.6px;
+    font-size: 12px; font-weight: 700; cursor: pointer; letter-spacing: 0.6px;
   }
   .m-btn:hover { opacity: 0.85; }
   .m-btn.direct { background: #00c8ff; color: #000; }
@@ -280,7 +270,6 @@
 <body>
 <div class="main">
 
-  <!-- LEFT -->
   <div class="left">
     <div class="pgm-block">
       <div class="pgm-screen"><span>PGM</span></div>
@@ -331,7 +320,7 @@
           </div>
           <span class="p-label">P2</span>
         </div>
-        <div class="page-thumb-cyan">
+        <div style="flex:0.3;">
           <div class="page-img solid-cyan" style="height:100px;width:60px;"></div>
         </div>
       </div>
@@ -359,7 +348,6 @@
     </div>
   </div>
 
-  <!-- RIGHT -->
   <div class="right">
     <div class="preview-panel">
       <div class="preview-screen">
@@ -400,21 +388,20 @@
       </div>
       <div class="dpad">
         <div class="dpad-row">
-          <button class="dpad-arrow"><svg width="32" height="22" viewBox="0 0 32 22"><path d="M16 2L28 20H4L16 2Z"/></svg></button>
+          <button class="dpad-arrow"><svg width="28" height="20" viewBox="0 0 28 20"><path d="M14 2L26 18H2L14 2Z"/></svg></button>
         </div>
         <div class="dpad-row">
-          <button class="dpad-arrow"><svg width="22" height="28" viewBox="0 0 22 28"><path d="M2 14L20 2V26L2 14Z"/></svg></button>
+          <button class="dpad-arrow"><svg width="20" height="26" viewBox="0 0 20 26"><path d="M2 13L18 2V24L2 13Z"/></svg></button>
           <button class="dpad-center-btn">slow</button>
-          <button class="dpad-arrow"><svg width="22" height="28" viewBox="0 0 22 28"><path d="M20 14L2 2V26L20 14Z"/></svg></button>
+          <button class="dpad-arrow"><svg width="20" height="26" viewBox="0 0 20 26"><path d="M18 13L2 2V24L18 13Z"/></svg></button>
         </div>
         <div class="dpad-row" style="flex-direction:column;align-items:center;">
-          <button class="dpad-arrow"><svg width="32" height="22" viewBox="0 0 32 22"><path d="M16 20L4 2H28L16 20Z"/></svg></button>
+          <button class="dpad-arrow"><svg width="28" height="20" viewBox="0 0 28 20"><path d="M14 18L2 2H26L14 18Z"/></svg></button>
           <span class="dpad-x2">x2</span>
         </div>
       </div>
     </div>
 
-    <!-- MEDIA ZONE: thumbs + controls left, buttons right -->
     <div class="media-zone">
       <div class="media-left">
         <div class="media-thumbs-row">
