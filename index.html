@@ -585,7 +585,17 @@
           return;
         }
 
+        var seen = {};
+        var unique = [];
         history.forEach(function(item) {
+          var key = item.titre || item.title || 'Sans titre';
+          if (!seen[key]) {
+            seen[key] = true;
+            unique.push(item);
+          }
+        });
+
+        unique.forEach(function(item) {
           var card = document.createElement('div');
           card.className = 'content-card';
           if (item.id === selectedContentId) card.classList.add('selected');
