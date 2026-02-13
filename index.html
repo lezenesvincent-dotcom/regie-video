@@ -470,7 +470,7 @@
       <div class="pgm-screen" id="pgmScreen">
         <span id="pgmLabel">PGM</span>
         <img id="pgmStream" alt="">
-        <video id="pgmVideo" playsinline></video>
+        <video id="pgmVideo" playsinline preload="auto"></video>
         <div class="pgm-live-badge" id="pgmLive">● LIVE</div>
         <div class="pgm-cam-label" id="pgmCamLabel"></div>
       </div>
@@ -851,6 +851,15 @@ var generiques = [
     });
   }
   buildGenThumbs();
+
+  // Précharger les génériques en arrière-plan
+  generiques.forEach(function(gen) {
+    var preload = document.createElement('link');
+    preload.rel = 'preload';
+    preload.as = 'video';
+    preload.href = gen.url;
+    document.head.appendChild(preload);
+  });
 
   function playGenerique(index) {
     var gen = generiques[index];
