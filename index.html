@@ -852,14 +852,11 @@ var generiques = [
   }
   buildGenThumbs();
 
-  // Précharger les génériques en arrière-plan
-  generiques.forEach(function(gen) {
-    var preload = document.createElement('link');
-    preload.rel = 'preload';
-    preload.as = 'video';
-    preload.href = gen.url;
-    document.head.appendChild(preload);
-  });
+  // Précharger le premier générique directement dans le player
+  if (generiques.length > 0) {
+    pgmVideo.src = generiques[0].url;
+    pgmVideo.load();
+  }
 
   function playGenerique(index) {
     var gen = generiques[index];
@@ -884,8 +881,14 @@ var generiques = [
     var thumb = document.querySelector('.m-thumb[data-gen="' + index + '"]');
     if (thumb) thumb.classList.add('playing');
 
-    // Lancer la vidéo
-    pgmVideo.src = gen.url;
+    // Ne recharger la src que si c'est un autre générique
+    if (pgmVideo.getAttribute('data-current') !== '' + index) {
+      pgmVideo.src = gen.url;
+      pgmVideo.load();
+      pgmVideo.setAttribute('data-current', index);
+    } else {
+      pgmVideo.currentTime = 0;
+    }
     pgmVideo.style.display = 'block';
     pgmVideo.play();
   }
@@ -893,7 +896,6 @@ var generiques = [
   // Quand la vidéo se termine, afficher PGM
   pgmVideo.addEventListener('ended', function() {
     pgmVideo.style.display = 'none';
-    pgmVideo.src = '';
     document.querySelectorAll('.m-thumb').forEach(function(t) { t.classList.remove('playing'); });
     document.getElementById('pgmLabel').style.display = 'block';
     document.getElementById('pgmLabel').textContent = 'PGM';
