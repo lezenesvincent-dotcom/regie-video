@@ -730,7 +730,18 @@
   var selectedContentId = null;
   var contacts = [];
   var activeSynthe = null;
-  var todayIntervenants = []; // contact IDs detected from today's fiches
+  var todayIntervenants = [];
+  var ws = null;
+
+  // ===== WEBSOCKET FOR SYNTHÉ SYNC =====
+  function connectSyntheWS() {
+    var wsUrl = WS_SERVER.replace('https://', 'wss://').replace('http://', 'ws://');
+    ws = new WebSocket(wsUrl);
+    ws.onopen = function() { console.log('🟢 Synthé WS connecté'); };
+    ws.onclose = function() { setTimeout(connectSyntheWS, 3000); };
+    ws.onerror = function() {};
+  }
+  connectSyntheWS(); // contact IDs detected from today's fiches
 
   // ===== LOAD CONTACTS FROM GITHUB =====
   async function loadContactsData() {
@@ -871,22 +882,23 @@
       // Turn OFF
       overlay.classList.remove('visible');
       activeSynthe = null;
-      // Update pills
       document.querySelectorAll('.synthe-pill').forEach(function(p) {
         p.classList.remove('on-air');
       });
+      // Send OFF to output page
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ type: 'synthe_update', data: null }));
+      }
       return;
     }
 
     // Turn ON
     activeSynthe = contact.id;
 
-    // Fill bandeau
     document.getElementById('syntheNom').textContent = contact.firstName + ' ' + contact.lastName;
     document.getElementById('syntheFonction').textContent = contact.function || '';
     document.getElementById('syntheEntreprise').textContent = contact.company || '';
 
-    // Show overlay with animation
     overlay.classList.remove('visible');
     requestAnimationFrame(function() {
       requestAnimationFrame(function() {
@@ -894,7 +906,6 @@
       });
     });
 
-    // Update pills
     document.querySelectorAll('.synthe-pill').forEach(function(p) {
       if (p.dataset.contactId === contact.id) {
         p.classList.add('on-air');
@@ -902,6 +913,18 @@
         p.classList.remove('on-air');
       }
     });
+
+    // Send to output page
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({
+        type: 'synthe_update',
+        data: {
+          nom: contact.firstName + ' ' + contact.lastName,
+          fonction: contact.function || '',
+          entreprise: contact.company || ''
+        }
+      }));
+    }
   }
 
   // Load synthés on startup
