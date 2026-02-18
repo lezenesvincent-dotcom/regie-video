@@ -263,6 +263,17 @@
     gap: 5px;
     flex-wrap: wrap;
   }
+  .synthes-sep {
+    width: 100%;
+    height: 1px;
+    background: rgba(255,255,255,0.06);
+    margin: 4px 0 2px;
+  }
+  .synthe-pill.suggested {
+    background: rgba(0,200,255,0.12);
+    border-color: #00c8ff;
+    color: #00e0ff;
+  }
   .synthe-pill {
     background: rgba(0,180,240,0.08);
     border: 1.5px solid #00aadd;
@@ -693,19 +704,17 @@
   var ptzSpeed = 5;
   var selectedContentId = null;
   var contacts = [];
-  var activeSynthe = null; // contact id currently on air
+  var activeSynthe = null;
+  var todayIntervenants = []; // contact IDs detected from today's fiches
 
   // ===== LOAD CONTACTS FROM GITHUB =====
-  async function loadContacts() {
+  async function loadContactsData() {
     try {
       var resp = await fetch('https://raw.githubusercontent.com/' + GH_REPO + '/main/contacts.json', { cache: 'no-store' });
       if (resp.ok) {
         contacts = await resp.json();
-        buildSynthePills();
       }
     } catch(e) {
-      console.error('Contacts load error:', e);
-      // Fallback: try API
       try {
         var r2 = await fetch('https://api.github.com/repos/' + GH_REPO + '/contents/contacts.json', {
           headers: { 'Accept': 'application/vnd.github.v3+json' }
@@ -713,10 +722,58 @@
         if (r2.ok) {
           var d = await r2.json();
           contacts = JSON.parse(decodeURIComponent(escape(atob(d.content))));
-          buildSynthePills();
         }
       } catch(e2) { console.error('Contacts fallback error:', e2); }
     }
+  }
+
+  // ===== LOAD TODAY'S FICHES → DETECT INTERVENANTS =====
+  async function loadTodayFiches() {
+    try {
+      var resp = await fetch(WS_SERVER + '/api/fiches');
+      if (!resp.ok) return;
+      var fiches = await resp.json();
+      var today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+
+      todayIntervenants = [];
+
+      Object.values(fiches).forEach(function(fiche) {
+        // Match fiches for today
+        if (fiche.date !== today) return;
+
+        // Extract intervenants from fiche
+        var intervs = fiche.intervenants || [];
+        intervs.forEach(function(interv) {
+          var nom = (interv.nom || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+          var prenom = (interv.prenom || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
+          // Match with contacts
+          contacts.forEach(function(c) {
+            var cNom = (c.lastName || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+            var cPrenom = (c.firstName || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
+            if (cNom && nom && cNom === nom) {
+              if (!todayIntervenants.includes(c.id)) {
+                todayIntervenants.push(c.id);
+              }
+            } else if (cNom && cPrenom && nom === cNom && prenom === cPrenom) {
+              if (!todayIntervenants.includes(c.id)) {
+                todayIntervenants.push(c.id);
+              }
+            }
+          });
+        });
+      });
+    } catch(e) {
+      console.error('Fiches load error:', e);
+    }
+  }
+
+  // ===== INIT: load contacts then fiches then build pills =====
+  async function initSynthes() {
+    await loadContactsData();
+    await loadTodayFiches();
+    buildSynthePills();
   }
 
   // ===== BUILD SYNTHÉ PILLS =====
@@ -731,27 +788,54 @@
       return;
     }
 
-    // Sort by lastName
     var sorted = contacts.slice().sort(function(a, b) {
       return (a.lastName || '').localeCompare(b.lastName || '');
     });
 
-    countEl.textContent = '(' + sorted.length + ')';
+    // Split: today's intervenants first, then the rest
+    var suggested = sorted.filter(function(c) { return todayIntervenants.includes(c.id); });
+    var others = sorted.filter(function(c) { return !todayIntervenants.includes(c.id); });
 
-    sorted.forEach(function(c) {
-      var pill = document.createElement('span');
-      pill.className = 'synthe-pill';
-      pill.textContent = c.firstName + ' ' + c.lastName;
-      pill.dataset.contactId = c.id;
+    if (suggested.length > 0) {
+      countEl.textContent = suggested.length + ' du jour / ' + sorted.length + ' total';
+    } else {
+      countEl.textContent = '(' + sorted.length + ')';
+    }
 
-      if (activeSynthe === c.id) pill.classList.add('on-air');
-
-      pill.addEventListener('click', function() {
-        toggleSynthe(c);
-      });
-
+    // Render suggested first
+    suggested.forEach(function(c) {
+      var pill = createPill(c, true);
       grid.appendChild(pill);
     });
+
+    // Separator if there are suggested contacts
+    if (suggested.length > 0 && others.length > 0) {
+      var sep = document.createElement('div');
+      sep.className = 'synthes-sep';
+      grid.appendChild(sep);
+    }
+
+    // Render others
+    others.forEach(function(c) {
+      var pill = createPill(c, false);
+      grid.appendChild(pill);
+    });
+  }
+
+  function createPill(contact, isSuggested) {
+    var pill = document.createElement('span');
+    pill.className = 'synthe-pill';
+    if (isSuggested) pill.classList.add('suggested');
+    pill.textContent = contact.firstName + ' ' + contact.lastName;
+    pill.dataset.contactId = contact.id;
+
+    if (activeSynthe === contact.id) pill.classList.add('on-air');
+
+    pill.addEventListener('click', function() {
+      toggleSynthe(contact);
+    });
+
+    return pill;
   }
 
   // ===== TOGGLE SYNTHÉ ON/OFF =====
@@ -795,10 +879,10 @@
     });
   }
 
-  // Load contacts on startup
-  loadContacts();
-  // Refresh contacts every 2 minutes
-  setInterval(loadContacts, 120000);
+  // Load synthés on startup
+  initSynthes();
+  // Refresh every 2 minutes
+  setInterval(initSynthes, 120000);
 
   // ===== OVERLAY CONTENTS =====
   function loadContents() {
@@ -1085,18 +1169,62 @@
 
   // ===== CALENDAR TIMELINE =====
   var CAL_START = 8;
-  var CAL_END = 17;
+  var CAL_END = 19;
   var HOUR_HEIGHT = 60;
-  var calEvents = [
-    { title: 'CHART SOLUTIONS', start: '10:00', end: '11:00' },
-    { title: 'DA - ARNAUD/ERIC', start: '16:00', end: '16:30' },
-    { title: 'DEBRIEF MARCHÉS', start: '16:30', end: '17:00' }
-  ];
+  var calEvents = [];
+
+  // Load real calendar data from GitHub (synced from Exchange every 5 min)
+  async function loadCalendarData() {
+    try {
+      var resp = await fetch('https://raw.githubusercontent.com/' + GH_REPO + '/main/calendar-data.json', { cache: 'no-store' });
+      if (!resp.ok) return;
+      var data = await resp.json();
+
+      // calendar-data.json contains { salle: [...], perso: [...] }
+      var events = data.salle || data.events || [];
+      if (Array.isArray(data) ) events = data;
+
+      var today = new Date();
+      var todayStr = today.getFullYear() + '-' + String(today.getMonth()+1).padStart(2,'0') + '-' + String(today.getDate()).padStart(2,'0');
+
+      calEvents = [];
+      events.forEach(function(ev) {
+        if (!ev.start) return;
+        var startDate = new Date(ev.start);
+        var endDate = ev.end ? new Date(ev.end) : new Date(startDate.getTime() + 30*60000);
+
+        // Filter today only
+        var evDateStr = startDate.getFullYear() + '-' + String(startDate.getMonth()+1).padStart(2,'0') + '-' + String(startDate.getDate()).padStart(2,'0');
+        if (evDateStr !== todayStr) return;
+
+        var sh = startDate.getHours();
+        var sm = startDate.getMinutes();
+        var eh = endDate.getHours();
+        var em = endDate.getMinutes();
+
+        calEvents.push({
+          title: ev.subject || ev.title || 'Sans titre',
+          start: String(sh).padStart(2,'0') + ':' + String(sm).padStart(2,'0'),
+          end: String(eh).padStart(2,'0') + ':' + String(em).padStart(2,'0'),
+          organizer: ev.organizer || '',
+          location: ev.location || ''
+        });
+      });
+
+      // Sort by start time
+      calEvents.sort(function(a, b) { return a.start.localeCompare(b.start); });
+
+      buildCalendar();
+    } catch(e) {
+      console.error('Calendar load error:', e);
+    }
+  }
 
   function buildCalendar() {
     var now = new Date();
     var jours = ['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
-    document.getElementById('calHeader').textContent = jours[now.getDay()] + ' ' + now.getDate();
+    var mois = ['janv.','fév.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'];
+    document.getElementById('calHeader').textContent = jours[now.getDay()] + ' ' + now.getDate() + ' ' + mois[now.getMonth()];
 
     var inner = document.getElementById('calTimelineInner');
     inner.innerHTML = '';
@@ -1137,10 +1265,22 @@
       if (nowMinutes >= endMin) div.classList.add('past');
       div.style.top = topPx + 'px';
       div.style.height = heightPx + 'px';
-      div.innerHTML = '<div class="cal-ev-time">' + ev.start.replace(':','H') + ' - ' + ev.end.replace(':','H') + '</div><div class="cal-ev-title">' + ev.title + '</div>';
+
+      var timeStr = ev.start.replace(':','H') + ' - ' + ev.end.replace(':','H');
+      div.innerHTML = '<div class="cal-ev-time">' + timeStr + '</div><div class="cal-ev-title">' + ev.title + '</div>';
+
+      // Tooltip on click
+      div.addEventListener('click', function() {
+        var info = ev.title + '\n' + timeStr;
+        if (ev.organizer) info += '\nOrg: ' + ev.organizer;
+        if (ev.location) info += '\nLieu: ' + ev.location;
+        alert(info);
+      });
+
       area.appendChild(div);
     });
 
+    // Now line
     if (nowMinutes >= CAL_START * 60 && nowMinutes <= CAL_END * 60) {
       var nowTop = ((nowMinutes - CAL_START * 60) / 60) * HOUR_HEIGHT;
       var line = document.createElement('div');
@@ -1182,9 +1322,11 @@
     }
   }
 
-  buildCalendar();
+  // Init calendar
+  loadCalendarData();
   setInterval(updateNowLine, 30000);
-  setInterval(buildCalendar, 300000);
+  // Reload calendar data every 5 min (matches Exchange sync interval)
+  setInterval(loadCalendarData, 300000);
 
 </script>
 </body>
