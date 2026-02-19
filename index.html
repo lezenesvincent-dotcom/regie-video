@@ -225,7 +225,7 @@
     display: flex; align-items: center; justify-content: center; color: #555; font-size: 11px;
   }
 
-  .right-tags { display: flex; flex-direction: column; gap: 6px; width: 220px; flex-shrink: 0; }
+  .right-tags { display: flex; flex-direction: column; gap: 6px; width: 240px; flex-shrink: 0; }
   .tag-row { display: flex; gap: 5px; align-items: center; flex-wrap: wrap; }
   .tag {
     background: rgba(255,255,255,0.05); border: 1.5px solid rgba(255,255,255,0.08); border-radius: 16px;
@@ -237,55 +237,36 @@
     width: 26px; height: 26px; background: rgba(255,255,255,0.05); border: 1.5px solid rgba(255,255,255,0.08);
     border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer;
   }
-
-  /* === SYNTHÉS PANEL (scrollable) === */
-  .synthes-panel {
-    background: #282c34;
-    border-radius: 12px;
-    padding: 8px 10px;
-    flex-shrink: 0;
-    max-height: 90px;
+  .search-btn:hover { border-color: rgba(255,255,255,0.15); }
+  .search-btn.active { border-color: #00c8ff; }
+  .search-btn.active svg circle, .search-btn.active svg line { stroke: #00c8ff; }
+  .search-row { padding: 0; }
+  .search-input {
+    width: 100%;
+    background: rgba(255,255,255,0.06);
+    border: 1.5px solid rgba(255,255,255,0.1);
+    border-radius: 10px;
+    padding: 6px 10px;
+    font-size: 11px;
+    font-family: 'Barlow', sans-serif;
+    font-weight: 400;
+    color: #fff;
+    outline: none;
+  }
+  .search-input:focus { border-color: #00c8ff; }
+  .search-input::placeholder { color: #555; }
+  .synthe-pills-wrap {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+    max-height: 70px;
     overflow-y: auto;
     overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
   }
-  .synthes-panel::-webkit-scrollbar { width: 3px; }
-  .synthes-panel::-webkit-scrollbar-track { background: transparent; }
-  .synthes-panel::-webkit-scrollbar-thumb { background: #444; border-radius: 2px; }
-  .synthes-header {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    margin-bottom: 6px;
-  }
-  .synthes-label {
-    font-size: 10px;
-    color: #555;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-  .synthes-count {
-    font-size: 9px;
-    color: #444;
-    font-weight: 500;
-  }
-  .synthes-grid {
-    display: flex;
-    gap: 5px;
-    flex-wrap: wrap;
-  }
-  .synthes-sep {
-    width: 100%;
-    height: 1px;
-    background: rgba(255,255,255,0.06);
-    margin: 4px 0 2px;
-  }
-  .synthe-pill.suggested {
-    background: rgba(0,200,255,0.12);
-    border-color: #00c8ff;
-    color: #00e0ff;
-  }
+  .synthe-pills-wrap::-webkit-scrollbar { width: 2px; }
+  .synthe-pills-wrap::-webkit-scrollbar-thumb { background: #444; border-radius: 2px; }
+
   .synthe-pill {
     background: rgba(0,180,240,0.08);
     border: 1.5px solid #00aadd;
@@ -595,31 +576,22 @@
           <div class="content-card-empty">Chargement...</div>
         </div>
       </div>
-      <div class="right-tags">
+      <div class="right-tags" id="synthesZone">
         <div class="tag-row">
-          <span class="tag active">Actions</span>
-          <span class="tag">Eco</span>
-          <span class="tag">Autre</span>
-          <div class="search-btn">
-            <svg width="12" height="12" viewBox="0 0 24 24"><circle cx="10" cy="10" r="7" fill="none" stroke="#888" stroke-width="2.5"/><line x1="15" y1="15" x2="21" y2="21" stroke="#888" stroke-width="2.5" stroke-linecap="round"/></svg>
+          <span class="tag active" data-filter="Actions">Actions</span>
+          <span class="tag" data-filter="Eco">Eco</span>
+          <span class="tag" data-filter="Autre">Autre</span>
+          <span class="tag" data-filter="">Tous</span>
+          <div class="search-btn" id="searchToggle">
+            <svg width="12" height="12" viewBox="0 0 24 24"><circle cx="10" cy="10" r="7" fill="none" stroke="#888" stroke-width="1.5"/><line x1="15" y1="15" x2="21" y2="21" stroke="#888" stroke-width="1.5" stroke-linecap="round"/></svg>
           </div>
         </div>
-        <div class="tag-row">
-          <span class="tag">Alexandre g</span>
-          <span class="tag">Hervé</span>
-          <span class="tag">Jluc</span>
+        <div class="search-row" id="searchRow" style="display:none;">
+          <input type="text" id="searchInput" placeholder="Rechercher un intervenant..." class="search-input">
         </div>
-      </div>
-    </div>
-
-    <!-- SYNTHÉS PANEL (scrollable) -->
-    <div class="synthes-panel" id="synthesPanel">
-      <div class="synthes-header">
-        <span class="synthes-label">Synthés</span>
-        <span class="synthes-count" id="synthesCount"></span>
-      </div>
-      <div class="synthes-grid" id="synthesGrid">
-        <span style="font-size:10px;color:#444;">Chargement contacts...</span>
+        <div class="synthe-pills-wrap" id="synthesGrid">
+          <span style="font-size:10px;color:#444;">Chargement...</span>
+        </div>
       </div>
     </div>
   </div>
@@ -812,15 +784,16 @@
     buildSynthePills();
   }
 
+  var activeFilter = 'Actions'; // default filter
+  var searchQuery = '';
+
   // ===== BUILD SYNTHÉ PILLS =====
   function buildSynthePills() {
     var grid = document.getElementById('synthesGrid');
-    var countEl = document.getElementById('synthesCount');
     grid.innerHTML = '';
 
     if (!contacts || contacts.length === 0) {
       grid.innerHTML = '<span style="font-size:10px;color:#444;">Aucun contact</span>';
-      countEl.textContent = '';
       return;
     }
 
@@ -828,51 +801,90 @@
       return (a.lastName || '').localeCompare(b.lastName || '');
     });
 
-    // Split: today's intervenants first, then the rest
-    var suggested = sorted.filter(function(c) { return todayIntervenants.includes(c.id); });
-    var others = sorted.filter(function(c) { return !todayIntervenants.includes(c.id); });
+    // Filter by tag (speciality)
+    var filtered = sorted;
+    if (activeFilter) {
+      filtered = sorted.filter(function(c) {
+        var spec = (c.speciality || c.category || '').toLowerCase();
+        return spec.indexOf(activeFilter.toLowerCase()) !== -1;
+      });
+    }
 
-    if (suggested.length > 0) {
-      countEl.textContent = suggested.length + ' du jour / ' + sorted.length + ' total';
+    // Filter by search
+    if (searchQuery) {
+      var q = searchQuery.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      filtered = sorted.filter(function(c) {
+        var fullName = ((c.firstName || '') + ' ' + (c.lastName || '')).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        return fullName.indexOf(q) !== -1;
+      });
+    }
+
+    // Suggested contacts from today's fiches come first
+    var suggested = filtered.filter(function(c) { return todayIntervenants.includes(c.id); });
+    var others = filtered.filter(function(c) { return !todayIntervenants.includes(c.id); });
+    var final = suggested.concat(others);
+
+    if (final.length === 0) {
+      grid.innerHTML = '<span style="font-size:10px;color:#555;">Aucun résultat</span>';
+      return;
+    }
+
+    final.forEach(function(c) {
+      var pill = document.createElement('span');
+      pill.className = 'synthe-pill';
+      if (todayIntervenants.includes(c.id)) pill.classList.add('suggested');
+      pill.textContent = c.firstName + ' ' + c.lastName;
+      pill.dataset.contactId = c.id;
+      if (activeSynthe === c.id) pill.classList.add('on-air');
+      pill.addEventListener('click', function() {
+        toggleSynthe(c);
+      });
+      grid.appendChild(pill);
+    });
+  }
+
+  // ===== TAG FILTER CLICKS =====
+  document.querySelectorAll('#synthesZone .tag').forEach(function(tag) {
+    tag.addEventListener('click', function() {
+      document.querySelectorAll('#synthesZone .tag').forEach(function(t) { t.classList.remove('active'); });
+      tag.classList.add('active');
+      activeFilter = tag.dataset.filter || '';
+      searchQuery = '';
+      document.getElementById('searchInput').value = '';
+      buildSynthePills();
+    });
+  });
+
+  // ===== SEARCH TOGGLE =====
+  document.getElementById('searchToggle').addEventListener('click', function() {
+    var row = document.getElementById('searchRow');
+    var btn = document.getElementById('searchToggle');
+    if (row.style.display === 'none') {
+      row.style.display = 'block';
+      btn.classList.add('active');
+      document.getElementById('searchInput').focus();
+      // Clear filter when searching
+      activeFilter = '';
+      document.querySelectorAll('#synthesZone .tag').forEach(function(t) { t.classList.remove('active'); });
     } else {
-      countEl.textContent = '(' + sorted.length + ')';
+      row.style.display = 'none';
+      btn.classList.remove('active');
+      searchQuery = '';
+      document.getElementById('searchInput').value = '';
+      // Reset to Actions filter
+      activeFilter = 'Actions';
+      document.querySelectorAll('#synthesZone .tag').forEach(function(t) {
+        if (t.dataset.filter === 'Actions') t.classList.add('active');
+      });
+      buildSynthePills();
     }
+  });
 
-    // Render suggested first
-    suggested.forEach(function(c) {
-      var pill = createPill(c, true);
-      grid.appendChild(pill);
-    });
-
-    // Separator if there are suggested contacts
-    if (suggested.length > 0 && others.length > 0) {
-      var sep = document.createElement('div');
-      sep.className = 'synthes-sep';
-      grid.appendChild(sep);
-    }
-
-    // Render others
-    others.forEach(function(c) {
-      var pill = createPill(c, false);
-      grid.appendChild(pill);
-    });
-  }
-
-  function createPill(contact, isSuggested) {
-    var pill = document.createElement('span');
-    pill.className = 'synthe-pill';
-    if (isSuggested) pill.classList.add('suggested');
-    pill.textContent = contact.firstName + ' ' + contact.lastName;
-    pill.dataset.contactId = contact.id;
-
-    if (activeSynthe === contact.id) pill.classList.add('on-air');
-
-    pill.addEventListener('click', function() {
-      toggleSynthe(contact);
-    });
-
-    return pill;
-  }
+  // ===== SEARCH INPUT =====
+  document.getElementById('searchInput').addEventListener('input', function() {
+    searchQuery = this.value;
+    buildSynthePills();
+  });
 
   // ===== TOGGLE SYNTHÉ ON/OFF =====
   function toggleSynthe(contact) {
