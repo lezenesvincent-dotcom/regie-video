@@ -1272,10 +1272,10 @@
 
   pgmVideo.addEventListener('ended', function() {
     pgmVideo.style.display = 'none';
+    pgmVideo.src = '';
     document.querySelectorAll('.m-thumb').forEach(function(t) { t.classList.remove('playing'); });
-    document.getElementById('pgmLabel').style.display = 'block';
-    document.getElementById('pgmLabel').textContent = 'PGM';
-    document.getElementById('pgmLabel').style.color = '#aaa';
+    // Retour automatique sur CAM 1
+    selectPgmCam(1);
   });
 
   var origSelectPgmCam = selectPgmCam;
@@ -1465,6 +1465,9 @@
   setInterval(updateNowLine, 30000);
   // Reload calendar data every 5 min (matches Exchange sync interval)
   setInterval(loadCalendarData, 300000);
+
+  // Auto-connect CAM 1 on page load
+  selectPgmCam(1);
 
 </script>
 </body>
